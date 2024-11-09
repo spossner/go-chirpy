@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func NewServer(cfg *config.Config) http.Handler {
+func NewServer(cfg *config.ApiConfig) http.Handler {
 	mux := http.NewServeMux()
 	addRoutes(mux, cfg)
 	var handler http.Handler = mux

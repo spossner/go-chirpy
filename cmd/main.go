@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/spossner/go-chirpy/internal/config"
 	"github.com/spossner/go-chirpy/internal/server"
-	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -14,16 +15,11 @@ import (
 	"time"
 )
 
-func run(
-	ctx context.Context,
-	args []string,
-	getenv func(string) string,
-	stdin io.Reader,
-	stdout, stderr io.Writer) error {
+func run(ctx context.Context) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	cfg := config.NewConfig(args, getenv)
+	cfg := config.NewApiConfig()
 	srv := server.NewServer(cfg)
 	httpServer := &http.Server{
 		Addr:           net.JoinHostPort(cfg.Host, cfg.Port),
@@ -33,9 +29,9 @@ func run(
 		MaxHeaderBytes: 1 << 20,
 	}
 	go func() {
-		fmt.Fprintf(stdout, "🚀 listening on %s\n", httpServer.Addr)
+		fmt.Printf("🚀 listening on %s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(stderr, "⛔ error listening and serving: %s\n", err)
+			fmt.Printf("⛔ error listening and serving: %s\n", err)
 		}
 	}()
 	var wg sync.WaitGroup
@@ -47,10 +43,10 @@ func run(
 		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
 		defer cancel()
 
-		fmt.Fprintf(stdout, "⌛ shutting down...\n")
+		fmt.Printf("⌛ shutting down...\n")
 
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			fmt.Fprintf(stderr, "⛔ error shutting down http server: %s\n", err)
+			fmt.Printf("⛔ error shutting down http server: %s\n", err)
 		}
 	}()
 	wg.Wait()
@@ -58,9 +54,12 @@ func run(
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	ctx := context.Background()
-	if err := run(ctx, os.Args, os.Getenv, os.Stdin, os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+	if err := run(ctx); err != nil {
+		log.Fatal(err)
 	}
 }
