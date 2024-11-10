@@ -68,7 +68,17 @@ func HandleDeleteChirp(cfg *config.ApiConfig, usr database.User) http.Handler {
 
 func HandleGetChirps(cfg *config.ApiConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		chirps, err := cfg.Queries.GetChirps(r.Context())
+
+		var chirps []database.Chirp
+		var err error
+		authorId := r.URL.Query().Get("author_id")
+		if authorId != "" {
+			if uid, ok := utils.ParseUUID(authorId); ok {
+				chirps, err = cfg.Queries.GetChirpsByUserId(r.Context(), uid)
+			}
+		} else {
+			chirps, err = cfg.Queries.GetChirps(r.Context())
+		}
 		if err != nil {
 			utils.EncodeWithError(w, http.StatusInternalServerError, "error fetching chirps", err)
 			return
