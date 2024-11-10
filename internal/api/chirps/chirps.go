@@ -9,6 +9,13 @@ import (
 	"github.com/spossner/go-chirpy/internal/database"
 	"github.com/spossner/go-chirpy/internal/utils"
 	"net/http"
+	"slices"
+	"strings"
+)
+
+const (
+	ASC  string = "ASC"
+	DESC string = "DESC"
 )
 
 func HandleCreateChirp(cfg *config.ApiConfig, usr database.User) http.Handler {
@@ -72,6 +79,7 @@ func HandleGetChirps(cfg *config.ApiConfig) http.Handler {
 		var chirps []database.Chirp
 		var err error
 		authorId := r.URL.Query().Get("author_id")
+
 		if authorId != "" {
 			if uid, ok := utils.ParseUUID(authorId); ok {
 				chirps, err = cfg.Queries.GetChirpsByUserId(r.Context(), uid)
@@ -79,6 +87,11 @@ func HandleGetChirps(cfg *config.ApiConfig) http.Handler {
 		} else {
 			chirps, err = cfg.Queries.GetChirps(r.Context())
 		}
+
+		if chirps != nil && strings.EqualFold(r.URL.Query().Get("sort"), "DESC") {
+			slices.Reverse(chirps)
+		}
+
 		if err != nil {
 			utils.EncodeWithError(w, http.StatusInternalServerError, "error fetching chirps", err)
 			return
