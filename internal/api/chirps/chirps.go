@@ -5,31 +5,17 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/spossner/go-chirpy/internal/auth"
 	"github.com/spossner/go-chirpy/internal/config"
 	"github.com/spossner/go-chirpy/internal/database"
 	"github.com/spossner/go-chirpy/internal/utils"
 	"net/http"
 )
 
-func HandleCreateChirp(cfg *config.ApiConfig) http.Handler {
+func HandleCreateChirp(cfg *config.ApiConfig, usr database.User) http.Handler {
 	type request struct {
 		Body string `json:"body"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, ok := utils.GetBearerToken(r)
-		if !ok {
-			fmt.Printf("no token found in %v\n", r.Header)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		userId, err := auth.CheckJWT(token, cfg.JWTSecret)
-		if err != nil {
-			fmt.Printf("invalid token: %w\n", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
 		req, err := utils.Decode[request](r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -39,15 +25,44 @@ func HandleCreateChirp(cfg *config.ApiConfig) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
 		chirp, err := cfg.Queries.CreateChirp(r.Context(), database.CreateChirpParams{
-			Body:   req.Body,
-			UserID: userId,
+			Body:   utils.CleanChirp(req.Body),
+			UserID: usr.ID,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		utils.EncodeWithStatus(w, http.StatusCreated, chirp)
+	})
+}
+
+func HandleDeleteChirp(cfg *config.ApiConfig, usr database.User) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := utils.ParseUUID(r.PathValue("id"))
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		chirp, err := cfg.Queries.GetChirpById(r.Context(), id)
+		if err != nil {
+			fmt.Printf("error fetching chirp: %w\n", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if chirp.UserID != usr.ID {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		err = cfg.Queries.DeleteChirpById(r.Context(), chirp.ID)
+		if err != nil {
+			fmt.Printf("error deleting chirp: %w\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 }
 
