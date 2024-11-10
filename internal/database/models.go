@@ -31,4 +31,5 @@ type User struct {
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
 	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
 	HashedPassword string           `json:"hashed_password"`
+	IsChirpyRed    pgtype.Bool      `json:"is_chirpy_red"`
 }

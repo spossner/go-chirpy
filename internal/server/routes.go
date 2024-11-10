@@ -7,6 +7,7 @@ import (
 	"github.com/spossner/go-chirpy/internal/api/health"
 	"github.com/spossner/go-chirpy/internal/api/login"
 	"github.com/spossner/go-chirpy/internal/api/ping"
+	"github.com/spossner/go-chirpy/internal/api/polka"
 	"github.com/spossner/go-chirpy/internal/api/user"
 	"github.com/spossner/go-chirpy/internal/config"
 	"github.com/spossner/go-chirpy/internal/middleware"
@@ -34,6 +35,9 @@ func addRoutes(mux *http.ServeMux, cfg *config.ApiConfig) {
 	mux.Handle("/api/chirps/{id}", chirps.HandleGetChirpById(cfg))
 	mux.Handle("POST /api/chirps", middleware.WithAuthentication(cfg, chirps.HandleCreateChirp))
 	mux.Handle("DELETE /api/chirps/{id}", middleware.WithAuthentication(cfg, chirps.HandleDeleteChirp))
+
+	// polka integration
+	mux.Handle("POST /api/polka/webhooks", polka.HandleWebhook(cfg))
 
 	mux.Handle("GET /admin/metrics", metrics.HandleMetrics(cfg))
 	mux.Handle("DELETE /admin/metrics", reset.HandleReset(cfg))

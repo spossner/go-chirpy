@@ -36,12 +36,19 @@ func Decode[T any](r *http.Request) (T, error) {
 }
 
 func GetBearerToken(r *http.Request) (string, bool) {
+	return getHeaderToken(r, "Bearer ")
+}
+
+func GetPolkaToken(r *http.Request) (string, bool) {
+	return getHeaderToken(r, "ApiKey ")
+}
+
+func getHeaderToken(r *http.Request, prefix string) (string, bool) {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		fmt.Println("no Authorization token found in header")
 		return "", false
 	}
-	const prefix = "Bearer "
 	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
 		fmt.Println("prefix length mismatch")
 		return "", false

@@ -18,6 +18,7 @@ type ApiConfig struct {
 	Host      string
 	Port      string
 	JWTSecret string
+	PolkaKey  string
 	Hits      map[string]int
 }
 
@@ -32,6 +33,7 @@ func NewApiConfig() *ApiConfig {
 		Host:      utils.GetEnvString("HOST", ""),
 		Port:      utils.GetEnvString("PORT", "8080"),
 		JWTSecret: utils.MustGetEnvString("JWT_SECRET"),
+		PolkaKey:  utils.MustGetEnvString("POLKA_KEY"),
 		Debug:     utils.GetEnvBool("DEBUG", false),
 		mu:        &sync.RWMutex{},
 		Hits:      make(map[string]int),

@@ -48,7 +48,7 @@ func HandleDeleteChirp(cfg *config.ApiConfig, usr database.User) http.Handler {
 
 		chirp, err := cfg.Queries.GetChirpById(r.Context(), id)
 		if err != nil {
-			fmt.Printf("error fetching chirp: %w\n", err)
+			fmt.Println("error fetching chirp:", err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -58,7 +58,7 @@ func HandleDeleteChirp(cfg *config.ApiConfig, usr database.User) http.Handler {
 		}
 		err = cfg.Queries.DeleteChirpById(r.Context(), chirp.ID)
 		if err != nil {
-			fmt.Printf("error deleting chirp: %w\n", err)
+			fmt.Println("error deleting chirp:", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

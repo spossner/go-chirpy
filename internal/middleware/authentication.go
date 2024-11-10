@@ -21,13 +21,13 @@ func WithAuthentication(cfg *config.ApiConfig, handlerFunc func(apiConfig *confi
 		}
 		userId, err := auth.CheckJWT(token, cfg.JWTSecret)
 		if err != nil {
-			fmt.Printf("invalid token: %w\n", err)
+			fmt.Println("invalid token:", err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		usr, err := cfg.Queries.GetUserById(r.Context(), userId)
 		if err != nil {
-			fmt.Printf("unknown user: %w\n", err)
+			fmt.Println("unknown user:", err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
